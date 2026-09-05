@@ -18,10 +18,9 @@ else:
     device = 'cpu'
 
 pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
-generator = torch.Generator(device)
 honyaku = Translator('en','ja').translate
 
 while True:
     prompt = input("プロンプトを入力してください: ")
-    img = pipe(honyaku(prompt), width = 256, height = 256, num_inference_steps=10, generator=generator).images[0]
+    img = pipe(honyaku(prompt), num_inference_steps=10).images[0]
     img.save('output.jpg')
