@@ -2,7 +2,6 @@ from diffusers import StableDiffusionPipeline
 import torch
 from translate import Translator
 import os
-import argparse
 
 model_file = 'v1-5-pruned-emaonly.safetensors'
 
