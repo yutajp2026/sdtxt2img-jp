@@ -2,7 +2,6 @@ from diffusers import StableDiffusionPipeline
 import torch
 from translate import Translator
 import os
-import argparse
 
 model_file = 'v1-5-pruned-emaonly.safetensors'
 
@@ -10,11 +9,7 @@ if not os.path.exists(model_file):
     url = 'https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
     torch.hub.download_url_to_file(url, model_file, hash_prefix=None, progress=True)
 
-parser = argparse.ArgumentParser(description='説明')
-parser.add_argument('--device', type=str, default='cpu', help='実行デバイス (例: cpu, cuda)')
-args = parser.parse_args()
-
-device = args.device
+device = 'cpu'
 pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
 honyaku = Translator('en','ja').translate
 
