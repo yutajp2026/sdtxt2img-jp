@@ -2,6 +2,9 @@ from diffusers import StableDiffusionPipeline
 import torch
 from translate import Translator
 import os
+import gradio as gr
+import webbrowser
+import platform
 
 model_file = 'v1-5-pruned-emaonly.safetensors'
 
@@ -19,7 +22,23 @@ else:
 pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
 honyaku = Translator('en','ja').translate
 
-while True:
-    prompt = input("プロンプトを入力してください: ")
-    img = pipe(honyaku(prompt), num_inference_steps=10).images[0]
-    img.save('output.jpg')
+def generate_image(prompt, steps):
+    img = pipe(honyaku(prompt), num_inference_steps=steps).images[0]
+    return img
+
+with gr.Blocks() as demo:
+    gr.Markdown("# Stable Diffusion 日本語プロンプト対応版")
+    with gr.Tab("txt2img"):
+        prompt_input = gr.Textbox(label="プロンプト")
+        steps_input = gr.Number(label="推論ステップ数", value=10, precision=0)
+        generate_btn = gr.Button("生成")
+        image_output = gr.Image()
+    with gr.Tab("img2img"):
+        gr.Markdown("img2img機能は現在サポートされていません。")
+
+    generate_btn.click(fn=generate_image, inputs=[prompt_input, steps_input], outputs=image_output)
+
+if platform.system() == "Windows":
+    webbrowser.open("http://localhost:7860")
+
+demo.launch()
