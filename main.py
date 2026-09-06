@@ -9,7 +9,13 @@ if not os.path.exists(model_file):
     url = 'https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
     torch.hub.download_url_to_file(url, model_file, hash_prefix=None, progress=True)
 
-device = 'cpu'
+if torch.cuda.is_available():
+    print("GPUが利用可能です。CUDAを使用します。")
+    device = 'cuda'
+else:
+    print("GPUが利用できません。CPUを使用します。")
+    device = 'cpu'
+
 pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
 honyaku = Translator('en','ja').translate
 
