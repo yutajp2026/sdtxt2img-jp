@@ -25,7 +25,7 @@ with gr.Blocks() as demo:
         pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
         honyaku = Translator('en','ja').translate
 
-        def generate_image(prompt, steps):
+        def txt2img(prompt, steps):
             img = pipe(honyaku(prompt), num_inference_steps=steps).images[0]
             return img
 
@@ -33,27 +33,20 @@ with gr.Blocks() as demo:
         steps_input = gr.Number(label="推論ステップ数", value=10, precision=0)
         generate_btn = gr.Button("生成")
         image_output = gr.Image()
+        generate_btn.click(fn=txt2img, inputs=[prompt_input, steps_input], outputs=image_output)
     with gr.Tab("img2img"):
         from diffusers.utils import make_image_grid, load_image
 
-        pipeline = AutoPipelineForImage2Image.from_pretrained(
-    "stable-diffusion-v1-5/stable-diffusion-v1-5", dtype=torch.float16, variant="fp16", use_safetensors=True
-)
-pipeline.enable_model_cpu_offload()
-# remove following line if xFormers is not installed or you have PyTorch 2.0 or higher installed
-pipeline.enable_xformers_memory_efficient_attention()
+        pipeline = AutoPipelineForImage2Image.from_pretrained(model_file, use_safetensors=True)
+        pipeline.enable_model_cpu_offload()
 
-# prepare image
-url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/img2img-init.png"
-init_image = load_image(url)
+        url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/img2img-init.png"
+        init_image = load_image(url)
 
-prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"
+        prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"
 
-# pass prompt and image to pipeline
-image = pipeline(prompt, image=init_image).images[0]
-make_image_grid([init_image, image], rows=1, cols=2)
-
-    generate_btn.click(fn=generate_image, inputs=[prompt_input, steps_input], outputs=image_output)
+        image = pipeline(prompt, image=init_image).images[0]
+        make_image_grid([init_image, image], rows=1, cols=2)
 
 if platform.system() == "Windows":
     webbrowser.open("http://localhost:7860")
