@@ -1,4 +1,4 @@
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, AutoPipelineForImage2Image
 import torch
 from translate import Translator
 import os
@@ -19,22 +19,39 @@ else:
     print("GPUが利用できません。CPUを使用します。")
     device = 'cpu'
 
-pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
-honyaku = Translator('en','ja').translate
-
-def generate_image(prompt, steps):
-    img = pipe(honyaku(prompt), num_inference_steps=steps).images[0]
-    return img
-
 with gr.Blocks() as demo:
     gr.Markdown("# Stable Diffusion 日本語プロンプト対応版")
     with gr.Tab("txt2img"):
+        pipe = StableDiffusionPipeline.from_single_file(model_file).to(device)
+        honyaku = Translator('en','ja').translate
+
+        def generate_image(prompt, steps):
+            img = pipe(honyaku(prompt), num_inference_steps=steps).images[0]
+            return img
+
         prompt_input = gr.Textbox(label="プロンプト")
         steps_input = gr.Number(label="推論ステップ数", value=10, precision=0)
         generate_btn = gr.Button("生成")
         image_output = gr.Image()
     with gr.Tab("img2img"):
-        gr.Markdown("img2img機能は現在サポートされていません。")
+        from diffusers.utils import make_image_grid, load_image
+
+        pipeline = AutoPipelineForImage2Image.from_pretrained(
+    "stable-diffusion-v1-5/stable-diffusion-v1-5", dtype=torch.float16, variant="fp16", use_safetensors=True
+)
+pipeline.enable_model_cpu_offload()
+# remove following line if xFormers is not installed or you have PyTorch 2.0 or higher installed
+pipeline.enable_xformers_memory_efficient_attention()
+
+# prepare image
+url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/img2img-init.png"
+init_image = load_image(url)
+
+prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"
+
+# pass prompt and image to pipeline
+image = pipeline(prompt, image=init_image).images[0]
+make_image_grid([init_image, image], rows=1, cols=2)
 
     generate_btn.click(fn=generate_image, inputs=[prompt_input, steps_input], outputs=image_output)
 
